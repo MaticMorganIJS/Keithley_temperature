@@ -1,0 +1,95 @@
+CLEAR SCREEN
+GRAPHICS OFF
+DIM Fr$[20],V$[20]
+DIM Lfr(100),Hfr(100),Nr(100),Dl(100)
+
+    ASSIGN @Multi TO 708
+    REMOTE @Multi
+
+! MAIN PART OF THE PROGRAM. IT ASKS WHAT KIND OF SENSOR YOU'RE USING AND LETS YOU REPEAT THE MEASURMENT AND WELL AS CHANGE THE SENSOR TYPE.
+
+ INPUT "ARE YOU USING A 500KOHM NTC THERMISTOR? , Y/N",Stdn$
+     IF Stdn$="Y" THEN
+     PRINT "YOU ARE USING A 500KOHM NTC THERMISTOR"
+     GOSUB Get_temp_ntc
+     LET Tempk=Tk
+     LET Tempc=Tc
+     PRINT "--------------------------------------"
+     PRINT "TEMPERATURE [K] = ",Tempk
+     PRINT "TEMPERATURE [C] = ",Tempc
+     INPUT "WOULD YOU LIKE TO REPEAT THIS MEASUREMENT? , Y/N",Stdn$
+         IF Stdn$="Y" THEN
+             GOTO 140
+         ELSE
+         INPUT "WOULD YOU RATHER USE THE PT100? , Y/N",Stdn$
+             IF Stdn$="Y" THEN
+                 PRINT "--------------------------------------"
+                 GOTO 340
+             ELSE
+                 PRINT "--------------------------------------"
+                 PRINT "THE END."
+             END IF
+         END IF
+     ELSE
+     PRINT "YOU ARE USING THE PT-100"
+     GOSUB Get_temp_pt100
+     LET Tempk=Tk
+     LET Tempc=Tc
+     PRINT "--------------------------------------"
+     PRINT "TEMPERATURE [K] = ",Tempk
+     PRINT "TEMPERATURE [C] = ",Tempc
+     INPUT "WOULD YOU LIKE TO REPEAT THIS MEASUREMENT? , Y/N",Stdn$
+         IF Stdn$="Y" THEN
+             GOTO 350
+         ELSE
+         INPUT "WOULD YOU RATHER USE THE 500KOHM NTC THERMISTOR? , Y/N",Stdn$
+             IF Stdn$="Y" THEN
+                 PRINT "--------------------------------------"
+                 GOTO 130
+             ELSE
+                 PRINT "--------------------------------------"
+                 PRINT "THE END."
+             END IF
+         END IF
+     END IF
+
+ GOSUB Konec
+
+
+! FUNCTIONS:
+
+! CAPTURE AND CALCULATION OF TEMPERATURE WITH PT-100
+ Get_temp_pt100: Tohm=0
+           Tcel=.6  !RESISTANCE OF CABLES
+           Tk=0
+           Tc=0
+           FOR I=1 TO 10
+                OUTPUT @Multi;"F2X"
+                ENTER @Multi;Tc$
+                T$=Tc$[6;11]
+                LET Tohm=Tohm+VAL(T$)-Tcel
+           NEXT I
+           Tohm=Tohm/10
+           LET Tc=-247.29+2.3992*Tohm+.00063962*Tohm*Tohm+1.0241E-6*Tohm*Tohm*Tohm
+           LET Tc=PROUND(Tc,-3)
+            LET Tk=273.15+Tc
+           RETURN
+
+! CAPTURE AND CALCULATION OF TEMPERATURE WITH 500KOHM NTC THERMISTOR
+ Get_temp_ntc: Tohm=0
+             Tcel=.6 !RESISTANCE OF CABLES
+             FOR I=1 TO 10
+                OUTPUT @Multi;"F2X"
+                ENTER @Multi;Tc$
+                T$=Tc$[6;11]
+                LET Tohm=Tohm+VAL(T$)-Tcel
+           NEXT I
+           Tohm=Tohm/10
+           LET Tk=1/(1.96E-3+4.7715E-4*LGT(Tohm/1000)+1.8137E-5*(LGT(Tohm/1000))*(LGT(Tohm/1000))-1.11841E-6*(LGT(Tohm/1000))*(LGT(Tohm/1000))*(LGT(Tohm/1000)))
+           LET Tk=PROUND(Tk,-3)
+           LET Tc=Tk-273.15
+           RETURN
+
+
+! END OF THE PROGRAM
+ Konec: END
